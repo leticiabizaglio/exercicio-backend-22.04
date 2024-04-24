@@ -30,8 +30,23 @@ app.get('/usuarios', async (req, res) => {
 })
 
 
-// Criar um novo usuario
-app.post('/usuarios', async (req, res) => {
+// Buscar um usuario especifico
+app.get('/usuarios/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const resultado = await pool.query('SELECT * FROM usuarios WHERE id = $1', [id]);
+
+        if (resultado.rowCount === 0) {
+            res.status(404).send({ message: 'Usuário não foi encontrado' });
+        } else {
+            res.status(200).send({ message: 'Sucesso ao obter esse usuario' });
+        }
+    } catch (error) {
+        console.log('Erro ao obter esse usuario');
+        res.status(500).send({ message: 'Erro ao obter esse usuario' });
+    }
+})
+
 
 
     // Função para calcular a idade do usuario
@@ -60,48 +75,41 @@ app.post('/usuarios', async (req, res) => {
             return "Aquário";
         } else if((mesNasc === 2 && diaNasc <= 18) || (mesNasc === 3 && diaNasc <= 20)){
             return "Peixes";
-        }
+        } else if((mesNasc === 3 && diaNasc <= 20) || (mesNasc === 4 && diaNasc <= 19)){
+            return "Áries";
+        } else if((mesNasc === 4 && diaNasc <= 19) || (mesNasc === 5 && diaNasc <= 20)){
+            return "Touro";
+        } else if((mesNasc === 5 && diaNasc <= 20) || (mesNasc === 6 && diaNasc <= 20)){
+            return "Gêmeos";
+        } else if((mesNasc === 6 && diaNasc <= 20) || (mesNasc === 7 && diaNasc <= 22)){
+            return "Câncer";
+        } else if((mesNasc === 7 && diaNasc <= 22) || (mesNasc === 8 && diaNasc <= 22)){    
+            return "Leão";
+        } else if((mesNasc === 8 && diaNasc <= 22) || (mesNasc === 9 && diaNasc <= 22)){
+            return "Virgem";
+        } else if((mesNasc === 9 && diaNasc <= 22) || (mesNasc === 10 && diaNasc <= 22)){
+            return "Libra";
+        } else if((mesNasc === 10 && diaNasc <= 22) || (mesNasc === 11 && diaNasc <= 21)){
+            return "Escorpião";
+        } else if((mesNasc === 11 && diaNasc <= 21) || (mesNasc === 12 && diaNasc <= 21)){
+            return "Sargitário";
+        } else if((mesNasc === 12 && diaNasc <= 21) || (mesNasc === 1 && diaNasc <= 19)){
+            return "Capricórnio";
+        } 
+            
     }
-    // 
     
-    //     // Verificando o signo com base no mês e no dia de nascimento
-    //     if ((mes === 1 && dia >= 20) || (mes === 2 && dia <= 18)) {
-    //         return "Aquário";
-    //     } else if ((mes === 2 && dia >= 19) || (mes === 3 && dia <= 20)) {
-    //         return "Peixes";
-    //     } else if ((mes === 3 && dia >= 21) || (mes === 4 && dia <= 19)) {
-    //         return "Áries";
-    //     } else if ((mes === 4 && dia >= 20) || (mes === 5 && dia <= 20)) {
-    //         return "Touro";
-    //     } else if ((mes === 5 && dia >= 21) || (mes === 6 && dia <= 20)) {
-    //         return "Gêmeos";
-    //     } else if ((mes === 6 && dia >= 21) || (mes === 7 && dia <= 22)) {
-    //         return "Câncer";
-    //     } else if ((mes === 7 && dia >= 23) || (mes === 8 && dia <= 22)) {
-    //         return "Leão";
-    //     } else if ((mes === 8 && dia >= 23) || (mes === 9 && dia <= 22)) {
-    //         return "Virgem";
-    //     } else if ((mes === 9 && dia >= 23) || (mes === 10 && dia <= 22)) {
-    //         return "Libra";
-    //     } else if ((mes === 10 && dia >= 23) || (mes === 11 && dia <= 21)) {
-    //         return "Escorpião";
-    //     } else if ((mes === 11 && dia >= 22) || (mes === 12 && dia <= 21)) {
-    //         return "Sagitário";
-    //     } else {
-    //         return "Capricórnio";
-    //     }
-    
-    
-    // Exemplo de uso:
-    const dataNascimento = "1990-05-25"; // Formato YYYY-MM-DD
-    const signo = calcularSigno(dataNascimento);
-    console.log("O signo é:", signo);
-    
+    // Criar um novo usuario
+    app.post('/usuarios', async (req, res) => {
 
     try {
         const { nome, sobrenome, datadenascimento, email } = req.body;
 
-        await pool.query('INSERT INTO usuarios (nome, sobrenome, datadenascimento, email) VALUES ($1, $2, $3, $4)', [nome, sobrenome, datadenascimento, email, calcularIdade(), calcularSigno()]);
+        const dataNascimento = new Date(datadenascimento);
+        const idade = calcularIdade(dataNascimento);
+        const signo = calcularSigno(dataNascimento.getMonth() + 1, dataNascimento.getDate());
+
+        await pool.query('INSERT INTO usuarios (nome, sobrenome, datadenascimento, email, idade, signo) VALUES ($1, $2, $3, $4, $5, $6)', [nome, sobrenome, datadenascimento, email, idade, signo]);
         res.status(201).send({ message: 'Sucesso ao criar usuario' });
     }
     catch (error) {
@@ -128,8 +136,13 @@ app.delete('/usuarios/:id', async (req, res) => {
 app.put('/usuarios/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { nome, sobrenome, datadenascimento, email, idade, signo } = req.body;
-        await pool.query('UPDATE usuarios SET nome = $1, sobrenome = $2, datadenascimento = $3, email = $4', [nome, email, id]);
+        const { nome, sobrenome, datadenascimento, email } = req.body;
+
+        const dataNascimento = new Date(datadenascimento);
+        const idade = calcularIdade(dataNascimento);
+        const signo = calcularSigno(dataNascimento.getMonth() + 1, dataNascimento.getDate());
+
+        await pool.query('UPDATE usuarios SET nome = $1, sobrenome = $2, datadenascimento = $3, email = $4, idade = $5, signo = $6 WHERE id = $7', [nome, email, datadenascimento, email, idade, signo, id]);
         res.status(200).send({ message: 'Sucesso ao atualizar o usuario' });
     } catch (error) {
         console.log('Erro ao editar o usuario');
