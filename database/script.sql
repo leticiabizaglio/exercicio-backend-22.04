@@ -9,3 +9,6 @@ CREATE TABLE usuarios (
     idade INTEGER NOT NULL,
     signo VARCHAR(100) NOT NULL
 )
+
+
+INSERT INTO usuarios (nome, sobrenome, datadenascimento, email, idade, signo) VALUES ('Letícia', 'Bizaglio', '2007-01-25', 'leticia.bizaglio@aluno.senai.br', 17, 'Aquário');
